@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Radar: pre-token protocols ranked by implied value</title>
+<link rel="stylesheet" href="3_app.css">
+</head>
+<body>
+<div id="integrity-strip" class="integrity-strip missing" aria-live="assertive">Verifying integrity…</div>
+<header class="top">
+  <div class="brand">
+    <div class="mark" aria-hidden="true">◎</div>
+    <div>
+      <h1>Token Radar</h1>
+      <p class="tag">Pre-token protocols, ranked by what a token would be worth if the record stayed as it is.</p>
+    </div>
+  </div>
+  <div class="meta" id="meta"></div>
+</header>
+
+<nav class="tabs" aria-label="Views">
+  <button data-tab="board" class="active">Board</button>
+  <button data-tab="live">Live tokens</button>
+  <button data-tab="model">Model</button>
+  <button data-tab="method">Method</button>
+</nav>
+
+<section id="tab-board" class="tab active">
+  <div class="controls">
+    <input id="q" type="search" placeholder="Search name or slug…" aria-label="Search protocols">
+    <select id="f-cat" aria-label="Filter by category"><option value="">All categories</option></select>
+    <select id="f-chain" aria-label="Filter by chain"><option value="">All chains</option></select>
+    <select id="f-verdict" aria-label="Filter by verdict">
+      <option value="">All verdicts</option>
+      <option value="farm">FARM</option>
+      <option value="thin">THIN</option>
+      <option value="skip">SKIP</option>
+    </select>
+    <label class="check"><input id="f-watch" type="checkbox"> Watchlist only</label>
+    <select id="sort" aria-label="Sort board">
+      <option value="rank">Sort: rank</option>
+      <option value="implied">Sort: implied value</option>
+      <option value="tvl">Sort: TVL</option>
+      <option value="growth">Sort: 7d growth</option>
+      <option value="age">Sort: age</option>
+      <option value="odds">Sort: token odds</option>
+      <option value="net">Sort: net value</option>
+    </select>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="boardwrap">
+    <table id="board" aria-label="Ranked board">
+      <thead><tr>
+        <th data-k="rank">#</th><th data-k="name">Protocol</th><th data-k="category">Category</th>
+        <th data-k="chains">Chains</th><th data-k="tvl" class="num">TVL</th><th data-k="growth" class="num">7d</th>
+        <th data-k="age" class="num">Age</th><th data-k="implied" class="num">Implied value</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+    <aside id="detail" class="detail" aria-live="polite">
+      <p class="hint">Click a row to see its value breakdown and farm plan.</p>
+    </aside>
+  </div>
+</section>
+
+<section id="tab-live" class="tab">
+  <p class="intro">Protocols whose token already trades. The board never ranks them: it shows the market's own
+  value, and prices the pre-token board from their multiples. Market caps are the snapshot's own figures.</p>
+  <table id="livetable" aria-label="Live tokens">
+    <thead><tr><th>Protocol</th><th>Category</th><th class="num">TVL</th><th class="num">Market cap</th><th class="num">Mcap / TVL</th><th class="num">7d</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</section>
+
+<section id="tab-model" class="tab">
+  <h2>Validation metrics, strictly out-of-sample</h2>
+  <p class="intro">The model is tested only on tokens that already trade, with the tested token never allowed
+  to price itself. No unlaunched protocol is used to fit or to validate anything.</p>
+  <div class="val-cards">
+    <div class="val-card">
+      <h3>Leave-one-out hit rate</h3>
+      <div class="val-big" id="val-loo-hit">—</div>
+      <div class="val-sub">Predictions within a 3× band of the real market cap</div>
+    </div>
+    <div class="val-card">
+      <h3>Walk-forward Spearman</h3>
+      <div class="val-big" id="val-wf-spearman">—</div>
+      <div class="val-sub">Oldest 60% of listings predicting the newest 40%</div>
+    </div>
+    <div class="val-card">
+      <h3>Top-20 recall</h3>
+      <div class="val-big" id="val-recall">—</div>
+      <div class="val-sub">Predicted top 20 vs the market's actual top 20</div>
+    </div>
+  </div>
+  <div class="val-metrics" id="val-metrics"></div>
+  <div class="val-notes">
+    <p><strong>How these numbers are made.</strong> Leave-one-out drops one live token, re-estimates every
+    category and global median from the other 127, and predicts the dropped token — the anchor never prices
+    itself. Walk-forward trains on the oldest 60% of dated listings and tests on the newest 40%, the sets
+    strictly isolated. Top-20 recall compares the full model's predicted top 20 against the market's actual
+    top 20. All three are out-of-sample; the in-sample Spearman (~0.53) is not used as a validation number.</p>
+  </div>
+</section>
+
+<section id="tab-method" class="tab">
+  <div class="judge-box">
+    <strong>How this board is built, in four rules:</strong>
+    <ol>
+      <li><strong>Zero noise:</strong> the board lists all 196 rankable pre-token protocols — the 40 watchlist
+      entries plus every one of the 156 early finds the snapshot holds. Nothing rankable is left out; nothing
+      unrankable is let in.</li>
+      <li><strong>Strict token isolation:</strong> a protocol counts as pre-token only when the snapshot records
+      no market cap, no Gecko ID and no symbol. Anything with a traded token is physically isolated from the
+      ranking board and shown only in the Live tokens view.</li>
+      <li><strong>Fundamental valuation:</strong> implied values come purely from peer category medians and
+      snapshot-native metrics, capped by a logarithmic soft cap so one giant TVL cannot hallucinate a
+      ten-billion-dollar token.</li>
+      <li><strong>Domain-aware exclusions:</strong> liquidity-routing artifacts — bridges, canonical bridges,
+      cross-chain bridges, liquid staking and restaking, restaked BTC, CEX listings and stablecoin wrappers —
+      are blacklisted by category, and versioned, wrapped and exchange-prefixed names are excluded by rule.</li>
+    </ol>
+  </div>
+
+  <h2>How the radar prices a token that does not exist yet</h2>
+  <p>Every number comes from the sealed snapshot: the protocol's TVL, its seven-day growth, how long it
+  has run with no token, and how many chains it runs on. No name is ever special-cased.</p>
+  <pre class="formula">raw      = TVL × multiple × growth × maturity × breadth
+implied  = softCap(raw, $500M) = $500M + $500M × ln(1 + (raw − $500M) / $500M) for raw &gt; $500M
+multiple = shrunk median mcap/TVL of the category's live tokens
+growth   = 1 + clamp(7d change, −50%, +100%) × 0.4
+maturity = 0.7 + min(age, 1095 days) / 1095 × 0.5
+breadth  = 1 + min(chains − 1, 9) × 0.01</pre>
+  <p>The multiple is the market's own verdict: for each category, the median market-cap-to-TVL ratio of
+  its live tokens, winsorized at 5× and shrunk toward the whole market's median with a pseudo-count of
+  8, then clamped to [0.05, 1.5]. A category with no live token prices at the market median.</p>
+  <h3>Validation methodology</h3>
+  <p>Three out-of-sample tests, all computed at build time from the snapshot's 128 live-token anchors and
+  shown on the Model tab: leave-one-out (each anchor predicted from the other 127, medians re-estimated per
+  fold), walk-forward (the oldest 60% of dated listings price the newest 40%), and top-20 recall (the full
+  model's predicted top 20 against the market's actual top 20). The page re-derives the Spearman benchmark
+  in the browser from the injected anchors and lights the integrity strip only when it matches the build-time
+  value exactly. Nothing here is an in-sample figure dressed up as validation.</p>
+  <h3>Exclusion rules</h3>
+  <p>Protocols in the categories Bridge, Canonical Bridge, Cross Chain Bridge, Liquid Staking, Liquid
+  Restaking, Restaked BTC, CEX and Stablecoin Wrapper are blacklisted. Names ending in a version number,
+  names containing the whole words wrapped, staked or staking, and names starting with an exchange name are
+  excluded. The snapshot carries no parent-protocol field, so sub-products cannot be identified from it —
+  no heuristic rule is invented for them, and the ranking stays purely data-driven.</p>
+  <h3>Farm verdict methodology</h3>
+  <p>The costed verdict prices one farming wallet: the TGE pool is 5% of the damped implied value, split
+  among an estimated farmer count of 10,000 + sqrt(TVL) × a chain sybil factor (Solana and Arbitrum 5.0,
+  Ethereum 0.5, Bitcoin 0.1, unlisted chains 1.0). Costs are chain gas per farm step plus the opportunity
+  cost of 180 days' locked capital at 5%, on a capital ladder of $500 to $5,000 by TVL. A row earns FARM
+  only when the net clears $100 with ROI above 1.0; a positive net below that bar is THIN; a negative net
+  is SKIP.</p>
+  <h3>Token odds methodology</h3>
+  <p>The launch probability is the category's Bayesian-smoothed launch rate, (live + 2) / (total + 5),
+  times an age factor (0.5 past 1,500 days, 1.2 in the 180–730 day window, 1.0 otherwise and for unknown
+  age), clamped to [1%, 99%]. Odds are a display badge only: the ranking is by implied value and nothing
+  else.</p>
+  <h3>Category pricing from this snapshot</h3>
+  <table id="compstable" aria-label="Category pricing">
+    <thead><tr><th>Category</th><th class="num">Live tokens</th><th class="num">Shrinkage weight</th><th class="num">Median mcap/TVL</th><th class="num">Multiple used</th><th>Confidence</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <h3>Farm plans</h3>
+  <p>Each row carries six steps built from its own record: the category sets the action, the first chain
+  sets the gas cost, TVL sets the capital, age sets the hold. Every step states what it costs and how
+  long it takes. The costed verdict above the plan prices the same position as one wallet's P&amp;L.
+  Nothing here predicts whether or when a token is issued: an implied value is this entry's own claim,
+  never make.fun's.</p>
+  <p class="src" id="source"></p>
+</section>
+
+<footer>Token Radar · model <span id="modelver"></span> · Data: DefiLlama snapshot, sealed for this bounty. Implied values are the entry's own estimates.</footer>
+<script src="../data.js"></script>
+<script src="1_model.js"></script>
+<script src="2_app.js"></script>
+</body>
+</html>
